@@ -1,0 +1,96 @@
+# adusercreation-php
+PHP webservice for Active Directory user creation
+
+# How to create an Active Directory account frim LDIF
+To create users from an LDIF you first need to create the user, and make it disabled, then set the password and then enable the account. However we can use a single LDIF file to do all those steps at once.
+
+The userAccountControl determines if an account is enabled or disabled. According to Microsoft's documentation the following values can be used and combined:
+```
+Tag 	Name 	Notes
+SCRIPT 	1 	
+ACCOUNTDISABLE 	2 	
+HOMEDIR_REQUIRED 	8 	
+LOCKOUT 	16 	
+PASSWD_NOTREQD 	32 	You can not assign this permission
+PASSWD_CANT_CHANGE 	64 	
+ENCRYPTED_TEXT_PWD_ALLOWED 	128 	
+TEMP_DUPLICATE_ACCOUNT 	256 	
+NORMAL_ACCOUNT 	512 	
+INTERDOMAIN_TRUST_ACCOUNT 	2048 	
+WORKSTATION_TRUST_ACCOUNT 	4096 	
+SERVER_TRUST_ACCOUNT 	8192 	
+DONT_EXPIRE_PASSWORD 	65536 	
+MNS_LOGON_ACCOUNT 	131072 	
+SMARTCARD_REQUIRED 	262144 	
+TRUSTED_FOR_DELEGATION 	524288 	
+NOT_DELEGATED 	1048576 	
+USE_DES_KEY_ONLY 	2097152 	
+DONT_REQ_PREAUTH 	4194304 	
+PASSWORD_EXPIRED 	8388608 	
+TRUSTED_TO_AUTH_FOR_DELEGATION 	16777216 
+```
+So 512 is a normal user account adding 2 results in a normal user account, but disabled.
+
+To make sure that the account never expires we set the accountExpires value to 0, which seems to work. Although according to http://arnoutvandervorst.blogspot.com/2008/03/ldap-accountexpires-attribute-values.html, the initial value should be: 9223372036854775807.
+
+Of course the user needs a password. To create the password do:
+
+echo -n "\"password\"" | iconv -f UTF8 -t UTF16LE | base64 -w 0
+
+Microsoft stores a quoted password in little endian UTF16 base64 encoded. The trivial command above takes care of it all. Note the -n option to echo, otherwise the carriage-return will also be part of the password.
+
+The first part of the following LDIF creates the disabled user account, the second part sets the password and the last part enables the account:
+
+```
+dn: CN=Piet Prutser,CN=Users,DC=forest,DC=example,DC=com 
+changetype: add 
+objectClass: top 
+objectClass: person 
+objectClass: organizationalPerson 
+objectClass: user 
+objectCategory: CN=Person,CN=Schema,CN=Configuration,DC=example,DC=com
+codePage: 0 
+countryCode: 0 
+distinguishedName: CN=Piet Prutser,CN=Users,DC=forest,DC=example,DC=com 
+cn: Piet Prutser
+sn: Prutser 
+givenName: Piet 
+displayName: Piet Prutser 
+name: Piet Prutser 
+telephoneNumber: 123456 
+instanceType: 4 
+userAccountControl: 514 
+accountExpires: 0 
+uidNumber: 600
+gidNumber: 600 
+sAMAccountName: pprutser 
+userPrincipalName: P.Prutser@example.com 
+altSecurityIdentities: Kerberos:pprutser@EXAMLE.COM
+mail: P.Prutser@example.com
+homeDirectory: \\ads\home\pprutser 
+homeDrive: Z: 
+unixHomeDirectory: /home/pprutser 
+loginShell: /bin/bash 
+
+dn: CN=Piet Prutser,OU=Users,DC=forest,DC=example,DC=com 
+changetype: modify 
+replace: unicodePwd 
+unicodePwd::IlwwdFwwZVwwc1wwdFwwIgo=
+
+dn: CN=Piet Prutser,OU=Users,DC=forest,DC=example,DC=com 
+changetype: modify 
+replace: userAccountControl
+userAccountControl: 512
+```
+
+When you get an error report like this:
+
+ldap_modify: Server is unwilling to perform (53) 
+additional info: 0000001F: SvcErr: DSID-031A0FC0, problem 5003 (WILL_NOT_PERFORM), data 0
+
+It means that the password (like the one in the example) is not a correct UTF16LE password
+
+## Reference
+- http://pig.made-it.com/pig-adusers.html
+- https://community.hortonworks.com/articles/82544/how-to-create-ad-principal-accounts-using-openldap.html
+
