@@ -1,9 +1,15 @@
 <?php
 require_once 'vendor/autoload.php';
+include 'config.php';
 
 use \adldap2\adldap2;
-#https://github.com/marcj/php-rest-service
-use RestService\Server;
+use RestService\Server; #https://github.com/marcj/php-rest-service
+
+$useraccount = $_GET['useraccount'];
+$userpassword = $_GET['password'];
+$userfirstname = $_GET['userfirstname'];
+$userlastname = $_GET['userlastname'];
+$useremail = $_GET['useremail'];
 
 // Construct new Adldap instance.
 $ad = new \Adldap\Adldap();
@@ -12,20 +18,20 @@ $ad = new \Adldap\Adldap();
 $config = [
   // An array of your LDAP hosts. You can use either
   // the host name or the IP address of your host.
-  'hosts'    => ['WIN-P6AESJ2R0PA.domain-test.com'],
-  'port'             => 636,
-  'use_ssl'          => true,
+  'hosts'    => $hosts,
+  'port'     => 636,
+  'use_ssl'  => true,
 
   // The LDAP type and LDAP base distinguished name of your domain to perform searches upon.
-  'schema'           => \Adldap\Schemas\ActiveDirectory::class,
-  'base_dn'  => 'dc=domain-test,dc=com',
-  'account_suffix'   => '@domain-test.com',
+  'schema'         => \Adldap\Schemas\ActiveDirectory::class,
+  'base_dn'        => $base_dn,
+  'account_suffix' => $account_suffix,
 
   // The account to use for querying / modifying LDAP records. This
   // does not need to be an admin account. This can also
   // be a full distinguished name of the user account.
-  'username' => 'administrator@domain-test.com',
-  'password' => 'P@ssw0rd',
+  'username' => $serviceaccount,
+  'password' => $serviceaccountpassword,
 ];
 
 // Add a connection provider to Adldap.
@@ -40,7 +46,7 @@ try {
     #echo '<pre>' . var_export($results, true) . '</pre>';
 
     // Finding a record.
-    $user = $provider->search()->find('John Doe');
+    $user = $provider->search()->find($useraccount);
 
     if ($user->exists) {
       http_response_code(403);
@@ -51,12 +57,12 @@ try {
       $user =  $provider->make()->user();
 
       // Setting a model's attribute.
-      $user->setAccountName('jdoe');
-      $user->setCommonName('John Doe');
-      $user->setFirstName('John');
-      $user->setLastName('Doe');
-      $user->setCompany('ACME');
-      $user->setEmail('jdoe@acme.com');
+      $user->setAccountName($useraccount);
+      $user->setCommonName($useraccount);
+      $user->setFirstName($userfirstname);
+      $user->setLastName($userlastname);
+      #$user->setCompany('ACME');
+      $user->setEmail($useremail);
 
       /*$dn = $user->getDnBuilder();
       $dn->addCn($user->getCommonName());
@@ -74,7 +80,7 @@ try {
           $user->setUserAccountControl('512');
 
           // Set new user password
-          $user->setPassword('P@ssw0rd');
+          $user->setPassword($userpassword);
 
           // Save the user.
           if($user->save()) {
@@ -91,38 +97,4 @@ try {
     echo '<pre>' . var_export($e, true) . '</pre>';
 
 }
-
-/*$user = $this->provider->make()->user();
-
-$user->setCommonName('Daisy Duck');
-$user->setDisplayName('Daisy Duck');
-$user->setFirstName('Daisy');
-$user->setLastName('Duck');
-$user->setTitle('Girlfriend of Donald Duck');
-$user->setDepartment('Andeby');
-$user->setInfo('Daisy was introduced in the short film Mr. Duck Steps Out (1940)');
-$user->setInitials('DD');
-$user->setPhysicalDeliveryOfficeName('Clubhouse office');
-$user->setTelephoneNumber('12345678');
-$user->setCompany('Mickey Mouse Clubhouse');
-$user->setPassword('Monday123');
-$user->setStreetAddress('Duckburg 123');
-$user->setPostalCode('1234');
-
-$dn = $user->getDnBuilder();
-
-$dn->addCn($user->getCommonName());
-$dn->addOu('Testusers');
-$dn->addDc('login');
-$dn->addDc('domain');
-$dn->addDc('local');
-
-// Returns 'cn=John Doe,ou=Accounting,dc=corp,dc=acme,dc=org'
-echo $dn->get();
-
-// The DistinguishedName object also contains the __toString() magic method
-// so you can also just echo the object itself
-echo $dn;
-$user->setDn($dn);
-$user->save();*/
- ?>
+?>
