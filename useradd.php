@@ -24,7 +24,7 @@ $config = [
 
   // The LDAP type and LDAP base distinguished name of your domain to perform searches upon.
   'schema'         => \Adldap\Schemas\ActiveDirectory::class,
-  'base_dn'        => $base_dn,
+  'base_dn'        => $basedn,
   'account_suffix' => $account_suffix,
 
   // The account to use for querying / modifying LDAP records. This
@@ -64,12 +64,10 @@ try {
       #$user->setCompany('ACME');
       $user->setEmail($useremail);
 
-      /*$dn = $user->getDnBuilder();
+      $dn = $user->getDnBuilder();
       $dn->addCn($user->getCommonName());
-      $dn->addOu('User Accounts');
-      $dn->addDc('domain-test');
-      $dn->addDc('com');
-      $user->setDn($dn);*/
+      $dn->addCn('Users');
+      $user->setDn($dn);
 
       // Saving the changes to your LDAP server.
       if ($user->save()) {
@@ -80,7 +78,7 @@ try {
           $user->setUserAccountControl('512');
 
           // Set new user password
-          $user->setPassword($userpassword);
+          $user->setPassword(rand_string(24));
 
           // Save the user.
           if($user->save()) {
@@ -95,6 +93,13 @@ try {
 
     // There was an issue binding / connecting to the server.
     echo '<pre>' . var_export($e, true) . '</pre>';
+
+}
+
+function rand_string( $length ) {
+
+    $chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    return substr(str_shuffle($chars),0,$length);
 
 }
 ?>

@@ -12,6 +12,8 @@ The Certification Authority root certificate has to be included in the certifica
 ### Adusercreation webservice configuration
 Configure the LDAPS variables in **config.php**. Example in the sample config.php file provided on github.
 
+In this first release, user is created in the default Active Directory **Users CN**.
+
 ## How does Adusercreation work ?
 ### How to create an Active Directory account with PHP using LDAPS
 Adusercreation uses Adldap2 PHP library to interact with Active Directory LDAP interface.
