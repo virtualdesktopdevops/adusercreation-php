@@ -9,10 +9,37 @@ Active Directory domain controller has to be configured with a valid SSL certifi
 
 The Certification Authority root certificate has to be included in the certificate trust store of the web server hosting the Adusercreation webservice. On Debian 9, the crt file has to be deployed in **/usr/local/share/ca-certificates/**, included with the **update-ca-certificates** command. Apache2 has to be then reloaded to allow it to validate the Active Directory LDAPS certificate during LDAPS connection establishment. For PHP configuration on IIS, use the following guide : http://www.web-site-scripts.com/knowledge-base/getAttach/263/AA-00754/Enable+LDAPS+on+Windows+IIS.pdf
 
-### Adusercreation webservice configuration
-Configure the LDAPS variables in **config.php**. Example in the sample config.php file provided on github.
+Use `openssl s_client -connect <domain controller>:636
+` command to check the certificate of the domain controller and validate the LDAPS certificate validation by the web server (linux system only, additional ldap.conf needed on windows for PHP).
 
-In this first release, user is created in the default Active Directory **Users CN**.
+### Adusercreation webservice configuration
+Configure the LDAPS variables in **config.php**. Example in the sample config.php file provided on github`.
+
+```
+// An array of your LDAP hosts. You can use either
+// the host name or the IP address of your host.
+$hosts = ['dc01.domain-test.com'];
+$basedn = 'dc=domain-test,dc=com';
+$account_suffix = '@domain-test.com';
+
+// The account to use for querying / modifying LDAP records. This
+// does not need to be an admin account. This can also
+// be a full distinguished name of the user account.
+$serviceaccount = 'administrator@`domain-test.com';
+$serviceaccountpassword = 'P@ssw0rd';
+```
+
+
+In this first release, users are created in the default Active Directory **Users CN**.
+
+### Testing Adusercreation
+Use the `wget 'http://localhost/adusercreation-php/useradd.php?useraccount=jackreacher&userfirstname=jack&userlastname=reacher&useremail=jack.reacher@domain-test.com'` to locally test user connection from the web server, or replace the localhost by your web server FQDN for testing from a remote web browser.
+
+A 403 error is returned if the user already exists.
+
+**A connection error is returned** if the LDAP server is unreacheable or **if LDAPS SSL certificate validation fails.**
+
+
 
 ## How does Adusercreation work ?
 ### How to create an Active Directory account with PHP using LDAPS
